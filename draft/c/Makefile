@@ -1,9 +1,10 @@
-COMPILER         = -c++
+COMPILER         = g++
 #OPTIMIZATION_OPT = -g -O0
-OPTIONS = -Wall -Wextra $(OPTIMIZATION_OPT)
-LIBS = -lcurl
+OPTIONS = $(OPTIMIZATION_OPT)
+LIBS = -lcurl -lmysqlclient -lz
 
-BUILD_LIST += post
+BUILD_LIST += t
+OBJS = iot_access_db.o iot_mqtt_protocol.o
 
 all: $(BUILD_LIST)
 

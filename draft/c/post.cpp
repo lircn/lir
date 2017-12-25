@@ -48,6 +48,6 @@ int post_data(const char *filename, const char *usr)
 
 int main(int argc, const char *argv[])
 {
-	post_data("/tmp/a", "bob");
+	post_data(argv[1], "bob");
 	return 0;
 }

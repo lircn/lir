@@ -5,6 +5,8 @@
 #include <string.h>
 #include <string>
 #include <list>
+#include <map>
+#include <deque>
 #include <fstream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -12,6 +14,9 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
+#include <mysql/mysql.h>
+
+#include "iot_access_db.h"
 
 using namespace std;
 
@@ -238,15 +243,34 @@ static bool check_attack(void)
 	return true;
 }
 
-int main ()
+typedef struct _t {
+	void *a;
+	void *b;
+} T;
+
+#define DB_HOST "127.0.0.1"
+#define DB_PORT (3306)
+#define DB_NAME "iot"
+#define DB_USR "root"
+#define DB_PWD "123"
+
+int main(int argc, char **argv)
 {
-	list<int> a;
-	list<int> b;
-	a.push_back(1);
-	a.push_back(1);
-	a.push_back(1);
-	a.push_back(1);
-	b = a;
-	b.pop_back();
-	printf("%d %d\n", a.size(), b.size());
+	CIotdb cidb;
+	cidb.init(DB_HOST, DB_NAME, DB_USR, DB_PWD, DB_PORT);
+	//cidb.mqtt3_db_message_store(1, 1, "topic", 2, 0, NULL, 0);
+
+	vector<MqttMessage> mm_list = cidb.mqtt3_db_message_get_retain(1, 2);
+
+	vector<MqttMessage>::iterator it = mm_list.begin();
+	vector<MqttMessage>::iterator it_end = mm_list.end();
+	for (; it != it_end; ++it) {
+		cout << (*it).topic << (*it).mid << endl;
+	}
+
+	char topic[] = "";
+	char filter[] = "";
+	cout << (mqtt_topic_match(argv[1], argv[2])?"true":"false") << endl;
+
+	return 0;
 }

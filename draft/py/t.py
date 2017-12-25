@@ -8,7 +8,7 @@ import copy
 import datetime
 import time
 import sys
-import config as cfg
+import subprocess
 
 TAB_TIME_FMT = "%Y%m%d"
 arr = [
@@ -96,11 +96,6 @@ def auto_reload():
     module.loadtime = mod_time
 
 
-n = 19.89
-
-print("重传率小于%f的：" % n)
-
-
 def test_list():
     syn_keys = [
         "syn_current",
@@ -176,5 +171,28 @@ def _trans_file(ip):
     ret = ret.read()
     return ret
 
+def do_sh(data):
+    try:
+        cmd = "./../t.sh " + "'"+data+"'"
+        ret = subprocess.call(cmd, shell=True)
+        if ret != 0:
+            print("upload apd error: %d" % (ret))
+    except Exception,e:
+        print("upload error: %s" % (str(e)))
+    return
 
-#print _trans_file("172.21.124.21")
+
+def do_sql(sql):
+    try:
+        cmd = "java -jar ~/work/java/sql_parser.jar " + "\""+sql+"\""
+        r = os.popen(cmd)
+        info = r.readlines()
+        ret = ""
+        for line in info:
+            ret += line
+        print ret
+    except Exception,e:
+        print(str(e))
+
+do_sql("select a.id,a.name,b.addr from user as a, tab as b where a.id>3 and b.addr='home'")
+
