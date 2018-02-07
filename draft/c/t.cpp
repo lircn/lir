@@ -12,13 +12,16 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <netdb.h>
+#include <vector>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <mysql/mysql.h>
 
-#include "iot_access_db.h"
+#include <linux/version.h>
 
 using namespace std;
+
+#define U32_MAX ((uint32_t)~0U)
 
 #define BUF_LEN			(1024)
 #define IFNAME_LIMIT	(10)
@@ -254,23 +257,164 @@ typedef struct _t {
 #define DB_USR "root"
 #define DB_PWD "123"
 
-int main(int argc, char **argv)
+typedef map<string, string> HttpArgs;
+
+vector<string> process_keyvalue(const string &input, char sep)
 {
-	CIotdb cidb;
-	cidb.init(DB_HOST, DB_NAME, DB_USR, DB_PWD, DB_PORT);
-	//cidb.mqtt3_db_message_store(1, 1, "topic", 2, 0, NULL, 0);
+	string::size_type pos = string::npos;
+	vector<string> ret;
 
-	vector<MqttMessage> mm_list = cidb.mqtt3_db_message_get_retain(1, 2);
-
-	vector<MqttMessage>::iterator it = mm_list.begin();
-	vector<MqttMessage>::iterator it_end = mm_list.end();
-	for (; it != it_end; ++it) {
-		cout << (*it).topic << (*it).mid << endl;
+	pos = input.find(sep);
+	if (pos == string::npos) {
+		return ret;
 	}
 
-	char topic[] = "";
-	char filter[] = "";
-	cout << (mqtt_topic_match(argv[1], argv[2])?"true":"false") << endl;
+	ret.push_back(input.substr(0, pos));
+	ret.push_back(input.substr(pos + 1));
+	return ret;
+}
+
+int process_args(const string &input)
+{
+	string::size_type pos = string::npos;
+	string tmp_str;
+	vector <string> kv;
+
+	tmp_str = input;
+
+	while (tmp_str.length() > 0) {
+		pos = tmp_str.find("&");
+		kv = process_keyvalue(tmp_str.substr(0, pos), '=');
+		if (kv.size() == 0) {
+			return -1;
+		}
+		cout << kv.at(0) << endl;
+		cout << kv.at(1) << endl;
+		if (pos == string::npos) {
+			break;
+		}
+		tmp_str = tmp_str.substr(pos + 1);
+	}
+
+	return 0;
+}
+
+inline void dbg(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	printf("%s %d: ", __func__, __LINE__);
+	printf(format, ap);
+	printf("\n");
+	va_end(ap);
+}
+
+enum A {
+	A_A,
+	A_B,
+	A_MAX
+};
+
+
+void func(vector<int> &out)
+{
+	vector<int> v;
+	v.push_back(1);
+	v.push_back(2);
+	out = v;
+}
+
+int32_t decode_string(const char* data, uint32_t data_len,
+		char* buf, uint32_t buf_size, uint32_t& result_len)
+{
+	uint32_t j = 0;
+	for(uint32_t i = 0; i < data_len && j < buf_size
+			; i++, j++)
+	{
+		if (data[i] == '%')
+		{
+			if (i+2 >= data_len)
+			{
+				return -1;	//	cant be decoded
+			}
+			char sPercentage[3] = {0};
+			sPercentage[0] = data[i+1];
+			sPercentage[1] = data[i+2];
+			buf[j] = (char)strtol(sPercentage, (char **)0, 16);
+			i += 2;
+		}
+	}
+	result_len = j;
+	return 0;
+}
+
+int32_t parse_uri(const char* data, uint32_t data_len
+		, std::string& path, std::string& file, std::string& arg)
+{
+	//	first, find the first "?", left is path
+	uint32_t uri_end = U32_MAX;
+	for(uint32_t i = 0; i < data_len; i++)
+	{
+		if (data[i] == '?')
+		{
+			uri_end = i;
+			break;
+		}
+	}
+	if (uri_end == U32_MAX)
+	{
+		uri_end = data_len;
+	}
+
+	//	third, find the last '/' in the left
+	uint32_t file_start = U32_MAX;
+	for(uint32_t i = uri_end; i != 0; i--)
+	{
+		if (data[i-1] == '/')
+		{
+			file_start = i-1;
+			break;
+		}
+	}
+	if (file_start == U32_MAX)
+	{
+		return -1;
+	}
+	else
+	{
+		path = string(data, file_start);
+		file = string(data + file_start, uri_end - file_start);
+	}
+
+	//	fifth, convert the "%6D" into char arg, in the right
+	if (uri_end == data_len)
+	{
+		arg = "";
+	}
+	else
+	{
+		static const uint32_t C_MAX_ARG_SIZE = 1<<10;
+		char sArg[C_MAX_ARG_SIZE];
+		uint32_t arg_len = 0;
+		int32_t ret = decode_string(data + uri_end + 1, data_len - uri_end - 1
+				, sArg, sizeof(sArg), arg_len);
+		if (ret)
+		{
+			return ret;
+		}
+		sArg[arg_len] = 0;
+		arg = sArg;
+	}
+	return 0;
+}
+
+#define DEBUG(format, ...) printf("[%s](%d)" format, __func__, __LINE__, __VA_ARGS__)
+
+int main(int argc, char **argv)
+{
+	char url[] = "192.168/haha?a=1&b=2";
+	DEBUG("%s\n", url);
 
 	return 0;
 }

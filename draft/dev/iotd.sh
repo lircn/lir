@@ -40,13 +40,14 @@ unpack_file()
 
 upload_file()
 {
-	curl -F "file=@${TMP_PATH}/${POST_FILE}" "${BASE_URL}/iot/cgn_upload"
+	curl -F "file=@${TMP_PATH}/${POST_FILE}" "${BASE_URL}iot/cgn_upload"
 }
 
 check_env()
 {
 	if [ ! -d $TMP_PATH ]; then
 		mkdir -p $TMP_PATH
+		chown $FTP_USR:$FTP_USR $TMP_PATH
 	fi
 
 	if [ ! -d $SRC_PATH ]; then
@@ -57,8 +58,6 @@ check_env()
 
 run()
 {
-	check_env
-
 	while true; do
 		pack_file
 		upload_file
@@ -67,6 +66,9 @@ run()
 }
 
 case $1 in
+	"env")
+		check_env
+		;;
 	"run")
 		run
 		;;

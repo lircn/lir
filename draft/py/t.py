@@ -65,7 +65,7 @@ def getEndOfDay(_time):
     return long(ret)
 
 def getts():
-    ret = time.mktime(time.strptime('2017-10-15 20:50:59', '%Y-%m-%d %H:%M:%S'))
+    ret = time.mktime(time.strptime('2018-01-12 06:18:00', '%Y-%m-%d %H:%M:%S'))
     return long(ret)
 
 def get2WeeksAgo():
@@ -194,5 +194,42 @@ def do_sql(sql):
     except Exception,e:
         print(str(e))
 
-do_sql("select a.id,a.name,b.addr from user as a, tab as b where a.id>3 and b.addr='home'")
 
+
+def fab(_max):
+    n, a, b = 0, 0, 1
+    while n < _max:
+        yield b
+        a, b = b, a + b
+        n += 1
+
+class Fab(object):
+    def __init__(self, _max):
+        self.max = _max
+        self.n = 0
+        self.a = 0
+        self.b = 1
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.n < self.max:
+            r = self.b
+            self.a, self.b = self.b, self.a + self.b
+            self.n += 1
+            return r
+        raise StopIteration()
+
+
+
+def save_atk_cc():
+    if True:
+        a = 1
+    else:
+        a = 2
+    return a
+
+s = "ss\r\n"
+print s+"|"
+print s.strip()+"|"

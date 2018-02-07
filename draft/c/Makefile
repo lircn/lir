@@ -4,7 +4,7 @@ OPTIONS = $(OPTIMIZATION_OPT)
 LIBS = -lcurl -lmysqlclient -lz
 
 BUILD_LIST += t
-OBJS = iot_access_db.o iot_mqtt_protocol.o
+OBJS =
 
 all: $(BUILD_LIST)
 
