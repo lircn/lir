@@ -1,7 +1,7 @@
 COMPILER         = g++
 #OPTIMIZATION_OPT = -g -O0
 OPTIONS = $(OPTIMIZATION_OPT)
-LIBS = -lcurl -lmysqlclient -lz
+LIBS = -lcurl -lz
 
 BUILD_LIST += t
 OBJS =
