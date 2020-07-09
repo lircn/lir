@@ -1,0 +1,1 @@
+i686-w64-mingw32-c++ -static-libstdc++ -static-libgcc -o find_num.exe find_num.cpp
