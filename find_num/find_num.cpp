@@ -11,88 +11,71 @@ using namespace std;
 /* Definations */
 #define IN_FILE_PATH    "in.txt"
 #define OUT_FILE_PATH   "out.txt"
-#define ARR_SIZE        (20000)
 
-/* Global vars */
-static double data[ARR_SIZE] = {0};
-static double target = 0;
 static time_t start_time;
-static int    total_cases = 0;
+static bool stop = false;
 
 /* Declears */
-void print_vector(vector<int> &v);
-void find_target(double target, vector<int> &v_target);
+void print_res(const vector<vector<double>> &res, double target);
 bool equal(double x, double y);
 
 /* Implements */
-void cal(double sum, int idx, vector<int> tag)
+void cal(vector<vector<double>> &res, const int order, const double target,
+        vector<double> &local, const vector<double> &num, bool root)
 {
-    if (data[idx] <= 0) {
+    static uint64_t total_cases = 0;
+    if (stop) {
         return;
     }
-    if (++total_cases % 10000000 == 0) {
+
+    total_cases++;
+    if (total_cases % 100000000 == 0) {
         cout << "calculate cases: " << total_cases;
         time_t end;
         time(&end);
         printf(", cost time %.2fs\n", difftime(end, start_time));
     }
 
-    if (sum > target) {
+    if (equal(target, 0)) {
+        res.push_back(local);
+        stop = true;
+        cout << "calculate cases: " << total_cases << endl;
         return;
-    } else if (equal(sum, target)) {
-        //printf("-dbg- sum: %.2f, target: %.2f, equal: %s\n", sum, target,
-        //        (equal(sum, target))?"true":"false");
-        find_target(target, tag);
     } else {
-        // do not add this
-        cal(sum, idx + 1, tag);
-
-        // add this
-        sum += data[idx];
-        tag.push_back(idx);
-        cal(sum, idx + 1, tag);
+        for (int i = order; i < num.size(); i++) {
+            if (num[i] > target) {
+                return;
+            }
+            if (i && num[i]==num[i-1] && i>order) {
+                continue;
+            }
+            local.push_back(num[i]);
+            cal(res, i+1, target-num[i], local, num, false);
+            local.pop_back();
+        }
     }
 }
 
-inline void print_vector(vector<int> &v)
+void print_res(const vector<vector<double>> &res, double target)
 {
-    for (auto it : v) {
-        cout << it << " ";
-    }
-    cout << endl;
-}
-
-void find_target(double target, vector<int> &v_target)
-{
-    ofstream of(OUT_FILE_PATH, ios::app);
-    if (!of) {
+    ofstream fout(OUT_FILE_PATH, ios::app);
+    if (!fout) {
         return;
     }
 
     cout << "find result: " << target << endl;
-    of << "find result: " << target << endl;
+    fout << "find result: " << target << endl;
 
-    cout << "idx: ";
-    of << "idx: ";
-    for (auto it : v_target) {
-        cout << it << " ";
-        of << it << " ";
+    for (auto vec : res) {
+        for (auto item : vec) {
+            cout << item << " ";
+            fout << item << " ";
+        }
+        cout << endl;
+        fout << endl;
     }
-    cout << endl;
-    of << endl;
 
-    cout << "val: ";
-    of << "val: ";
-    for (auto it : v_target) {
-        cout << data[it] << " ";
-        of << data[it] << " ";
-    }
-    cout << endl;
-    of << endl;
-
-    of.close();
-
-    //exit(0); // find and exit
+    fout.close();
 }
 
 inline bool equal(double x, double y)
@@ -110,27 +93,39 @@ int main(int argc, const char *argv[])
         return 0;
     }
 
+    double target;
     cout << "input target number: ";
     cin >> target;
 
-    size_t cnt = 0;
+    cout << target << endl;
+    vector<double> num;
     string str;
     while (getline(file, str)) {
         if (str.empty()) {
             continue;
         }
-
-        data[cnt] = stod(str, NULL);
-        cnt++;
+        num.push_back(stod(str, NULL));
     }
 
     time(&start_time);
-    vector<int> tag;
-    cal(0, 0, tag);
+
+    vector<vector<double>> res;
+    vector<double> local;
+
+    sort(num.begin(), num.end());
+    int tail = 0;
+    for (; tail < num.size(); tail++) {
+        if (num[tail] > target) {
+            break;
+        }
+    }
+    num = vector<double>(num.begin(), num.begin()+tail);
+    cal(res, 0, target, local, num, true);
+    print_res(res, target);
 
     time_t end;
     time(&end);
-    printf("total cost time %.2fs\n", difftime(end, start_time));
+    printf("total cost time %fs\n", difftime(end, start_time));
 
     system("pause");
 
